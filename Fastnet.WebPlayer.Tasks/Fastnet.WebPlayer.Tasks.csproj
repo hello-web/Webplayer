@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net461</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Fastnet.Core" Version="1.0.302" />
+    <PackageReference Include="Fastnet.Core.Web" Version="1.0.363" />
+    <PackageReference Include="Fastnet.Music.Core" Version="1.0.83" />
+    <PackageReference Include="Fastnet.Music.Messages" Version="1.0.248" />
+    <PackageReference Include="NAudio" Version="1.8.4" />
+  </ItemGroup>
+
+</Project>
