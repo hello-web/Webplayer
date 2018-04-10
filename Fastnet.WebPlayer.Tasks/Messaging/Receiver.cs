@@ -69,8 +69,7 @@ namespace Fastnet.WebPlayer.Tasks
                 else
                 {
                     var dm = await dmf.GetManagerAsync(playerCommand.Identifier);
-                    dir
-                        dm?.CommandHandler(playerCommand);
+                    dm?.CommandHandler(playerCommand);
                 }
             }
         }
