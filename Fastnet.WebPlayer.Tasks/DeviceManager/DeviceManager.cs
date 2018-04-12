@@ -1,4 +1,5 @@
 ﻿using Fastnet.Core;
+using Fastnet.Music.Core;
 using Fastnet.Music.Messages;
 using Microsoft.Extensions.Logging;
 using System;
@@ -9,6 +10,7 @@ namespace Fastnet.WebPlayer.Tasks
 {
     public abstract class DeviceManager: IDisposable
     {
+        protected (long ItemId, long SubItemId) playlistEntry;
         protected bool isPlaying; // this is the palying or stopped state
         protected bool isPaused; // this is the play/paused toggle
         internal string LocalStore { get; set; }
@@ -44,6 +46,7 @@ namespace Fastnet.WebPlayer.Tasks
             switch (cmd.Command)
             {
                 case PlayerCommands.Play:
+                    playlistEntry = (cmd.PlaylistItemId, cmd.PlaylistSubItemId);
                     Play(cmd);
                     break;
                 case PlayerCommands.TogglePlayPause:
@@ -58,6 +61,13 @@ namespace Fastnet.WebPlayer.Tasks
                             Pause(cmd);
                         } 
                     }
+                    else
+                    {
+                        log.Warning($"received toggleplaypause when isPlaying is false!");
+                    }
+                    break;
+                case PlayerCommands.JumpTo:
+                    JumpTo(cmd);
                     break;
             }
         }
@@ -78,6 +88,7 @@ namespace Fastnet.WebPlayer.Tasks
         protected abstract Task Play(PlayerCommand cmd);
         protected abstract void Pause(PlayerCommand cmd);
         protected abstract void Resume(PlayerCommand cmd);
+        protected abstract void JumpTo(PlayerCommand cmd);
         protected virtual void OnPulse()
         {
             log.Debug($"{identifier.DeviceName}: 1 second pulse");
@@ -109,7 +120,6 @@ namespace Fastnet.WebPlayer.Tasks
 
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
-
         protected virtual void Dispose(bool disposing)
         {
             if (!disposedValue)
@@ -125,7 +135,6 @@ namespace Fastnet.WebPlayer.Tasks
                 disposedValue = true;
             }
         }
-
         // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
         // ~DeviceManager() {
         //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.

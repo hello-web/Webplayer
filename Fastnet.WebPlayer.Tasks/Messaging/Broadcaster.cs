@@ -160,7 +160,7 @@ namespace Fastnet.WebPlayer.Tasks
                         list.Add(new AudioDevice { Type = AudioDeviceType.Wasapi, Name = de.FriendlyName, IsDefault = true });
                         if (!playConfig.UseDefaultDeviceOnly)
                         {
-                            foreach (var wasapi in enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active))
+                            foreach (var wasapi in enumerator.EnumerateAudioEndPoints(DataFlow.Render, NAudio.CoreAudioApi.DeviceState.Active))
                             {
                                 if (wasapi.FriendlyName != de.FriendlyName)
                                 {

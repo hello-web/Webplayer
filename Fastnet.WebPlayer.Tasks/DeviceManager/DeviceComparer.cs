@@ -1,4 +1,5 @@
-﻿using Fastnet.Music.Messages;
+﻿using Fastnet.Music.Core;
+using Fastnet.Music.Messages;
 using System.Collections.Generic;
 
 namespace Fastnet.WebPlayer.Tasks

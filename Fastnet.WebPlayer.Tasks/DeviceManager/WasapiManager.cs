@@ -1,4 +1,5 @@
 ﻿using Fastnet.Core;
+using Fastnet.Music.Core;
 using Fastnet.Music.Messages;
 using Microsoft.Extensions.Logging;
 using NAudio.CoreAudioApi;
