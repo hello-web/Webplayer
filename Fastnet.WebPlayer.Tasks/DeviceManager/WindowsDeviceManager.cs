@@ -7,6 +7,7 @@ using NAudio.MediaFoundation;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -39,6 +40,7 @@ namespace Fastnet.WebPlayer.Tasks
         public class PlaybackEventArgs : EventArgs
         {
             public string Source { get; set; }
+            public bool IsDisposing { get; set; }
         }
         public class PlaybackStartingEventArgs : PlaybackEventArgs
         {
@@ -49,15 +51,18 @@ namespace Fastnet.WebPlayer.Tasks
         {
             public event EventHandler<PlaybackStartingEventArgs> PlaybackStarting;
             public event EventHandler<PlaybackEventArgs> PlaybackStopped;
+            private bool isDisposing;
             protected WaveStream reader;
-            protected SampleChannel channel;
+            //protected SampleChannel channel;
             protected readonly ILogger log;
+            protected readonly MMDevice device;
             protected readonly IWavePlayer player;
             protected readonly string musicSource;
             protected readonly PlayerCommand cmd;
             public PlayerConfiguration PlayerConfiguration { get; set; }
-            public MediaFoundationPlayer(string source, PlayerCommand cmd, IWavePlayer player, ILogger log)
+            public MediaFoundationPlayer(string source, PlayerCommand cmd, MMDevice device, IWavePlayer player, ILogger log)
             {
+                this.device = device;
                 this.musicSource = source;
                 this.cmd = cmd;
                 this.log = log;
@@ -72,10 +77,14 @@ namespace Fastnet.WebPlayer.Tasks
             }
             public (NAudio.Wave.PlaybackState playbackState, TimeSpan currentTime, TimeSpan totalTime, float volume) GetProgress()
             {
-                return (player.PlaybackState, reader.CurrentTime, reader.TotalTime, channel.Volume);
+                //var range = device.AudioEndpointVolume.VolumeRange;
+                //var volume = Math.Abs((device.AudioEndpointVolume.MasterVolumeLevel / (range.MaxDecibels - range.MinDecibels)) * 100.0);
+                var volume = device.AudioEndpointVolume.MasterVolumeLevelScalar * 100.0;
+                return (player.PlaybackState, reader.CurrentTime, reader.TotalTime, (float)volume);
             }
             public void Dispose()
             {
+                isDisposing = true;
                 try
                 {
                     if (reader != null)
@@ -86,12 +95,17 @@ namespace Fastnet.WebPlayer.Tasks
                     {
                         player.Dispose();
                     }
+                    MediaFoundationApi.Shutdown();
                 }
                 catch (Exception xe)
                 {
                     log.Error(xe);
                 }
-                MediaFoundationApi.Shutdown();
+                finally
+                {
+                    isDisposing = false;
+                }
+
             }
             protected virtual void RaisePlaybackStarting(string source, WaveStream reader)
             {
@@ -99,7 +113,15 @@ namespace Fastnet.WebPlayer.Tasks
             }
             protected virtual void RaisePlaybackStopped(string source)
             {
-                PlaybackStopped?.Invoke(this, new PlaybackEventArgs { Source = source });
+                PlaybackStopped?.Invoke(this, new PlaybackEventArgs { Source = source, IsDisposing = isDisposing });
+                //if (!isDisposing)
+                //{
+                //    PlaybackStopped?.Invoke(this, new PlaybackEventArgs { Source = source });
+                //}
+                //else
+                //{
+                //    log.Debug($"PlaybackStoppedEvent during disposal - ignored");
+                //}
             }
 
             internal void JumpTo(PlayerCommand cmd)
@@ -116,20 +138,12 @@ namespace Fastnet.WebPlayer.Tasks
         {
             private string musicFile;
             private readonly string localStore;
-            public FilePlayer(string source, PlayerCommand cmd, string localStore, IWavePlayer player, ILogger log) : base(source, cmd, player, log)
+            public FilePlayer(string source, PlayerCommand cmd, string localStore, MMDevice device, IWavePlayer player, ILogger log) : base(source, cmd, device, player, log)
             {
                 this.localStore = localStore;
             }
             public override Task PlayAsync()
             {
-                //if (PlayerConfiguration.TryAlternatePath)
-                //{
-                //    musicFile = FindAlternatePath(musicSource);
-                //}
-                //else
-                //{
-                //    musicFile = await DownloadFile(musicSource, cmd.EncodingType, cmd.MusicFileUid);
-                //}
                 musicFile = musicSource;
                 PlayFile();
                 return Task.CompletedTask;
@@ -150,8 +164,8 @@ namespace Fastnet.WebPlayer.Tasks
                     reader = new MediaFoundationReader(musicFile);
 
                     //player = GetDevice(mmDevice);
-                    channel = new SampleChannel(reader, true);
-                    channel.Volume = 0.5f;
+                    //channel = new SampleChannel(reader, true);
+                    //channel.Volume = 1.0f;
                     player.PlaybackStopped += (o, e) =>
                     {
                         //File.Delete(musicFile);
@@ -214,7 +228,7 @@ namespace Fastnet.WebPlayer.Tasks
             private Stream webStream;
             private byte[] buffer;
             private int bytesRead;
-            public StreamPlayer(string source, PlayerCommand cmd, IWavePlayer player, ILogger log) : base(source, cmd, player, log)
+            public StreamPlayer(string source, PlayerCommand cmd, MMDevice device, IWavePlayer player, ILogger log) : base(source, cmd, device, player, log)
             {
 
             }
@@ -225,8 +239,8 @@ namespace Fastnet.WebPlayer.Tasks
                 {
                     stream = GetSourceStream();
                     reader = new StreamMediaFoundationReader(stream);
-                    channel = new SampleChannel(reader, true);
-                    channel.Volume = 0.5f;
+                    //channel = new SampleChannel(reader, true);
+                    //channel.Volume = 0.5f;
                     player.PlaybackStopped += (o, e) =>
                     {
                         stream.Dispose();
@@ -327,6 +341,7 @@ namespace Fastnet.WebPlayer.Tasks
                 State = Music.Core.DeviceState.Idle,
                 PlaybackEvent = PlaybackEvent.None
             };
+            log.Debug($"{ds.State}");
             broadcaster.Queue(ds);
             // Important! base.Stop() must be called so that this instance is disposed
             base.Stop();
@@ -346,15 +361,16 @@ namespace Fastnet.WebPlayer.Tasks
             if (mmDevice != null)
             {
                 var url = $"{musicServerUrl}/{cmd.StreamUrl}";
-                log.Debug($"request to call {url}");
+                log.Debug($"request to call {url}, current isPlaying = {isPlaying}");
                 mfp?.Dispose();
+                mmDevice.AudioEndpointVolume.MasterVolumeLevelScalar = cmd.Volume / 100.0f;
                 if (playerConfiguration.CacheBeforePlaying)
                 {
-                    mfp = new FilePlayer(url, cmd, LocalStore, GetDevice(mmDevice), loggerFactory.CreateLogger<FilePlayer>());
+                    mfp = new FilePlayer(url, cmd, LocalStore, mmDevice, GetDevice(mmDevice), loggerFactory.CreateLogger<FilePlayer>());
                 }
                 else
                 {
-                    mfp = new StreamPlayer(url, cmd, GetDevice(mmDevice), loggerFactory.CreateLogger<StreamPlayer>());
+                    mfp = new StreamPlayer(url, cmd, mmDevice, GetDevice(mmDevice), loggerFactory.CreateLogger<StreamPlayer>());
                 }
                 mfp.PlayerConfiguration = playerConfiguration;
                 mfp.PlaybackStarting += Mfp_PlaybackStarting;
@@ -367,24 +383,39 @@ namespace Fastnet.WebPlayer.Tasks
         {
             mfp?.JumpTo(cmd);
         }
+        protected override void SetVolume(PlayerCommand cmd)
+        {
+            //var range = mmDevice.AudioEndpointVolume.VolumeRange;
+            //var decibels = (range.MaxDecibels - range.MinDecibels) * (cmd.Volume / 100.0f) + range.MinDecibels;
+
+            mmDevice.AudioEndpointVolume.MasterVolumeLevelScalar = cmd.Volume / 100.0f;
+        }
         private void Mfp_PlaybackStopped(object sender, PlaybackEventArgs e)
         {
             isPlaying = false;
-            var p = mfp.GetProgress();
-            mfp?.Dispose();
-            var ds = new DeviceStatus
+            if (!e.IsDisposing)
             {
-                Identifier = this.identifier,
-                State = Music.Core.DeviceState.Playing,
-                PlaybackEvent = PlaybackEvent.PlayStopped,
-                CurrentTime = p.currentTime,
-                TotalTime = p.totalTime,
-                Volume = p.volume,
-                PlaylistItemId = playlistEntry.ItemId,
-                PlaylistSubItemId = playlistEntry.SubItemId
-            };
-            broadcaster.Queue(ds);
-            log.Debug($"{e.Source} playback stopped");
+                var p = mfp.GetProgress();
+                mfp?.Dispose();
+                var ds = new DeviceStatus
+                {
+                    Identifier = this.identifier,
+                    State = Music.Core.DeviceState.Playing,
+                    PlaybackEvent = PlaybackEvent.PlayStopped,
+                    CurrentTime = p.currentTime,
+                    TotalTime = p.totalTime,
+                    Volume = p.volume,
+                    PlaylistItemId = playlistEntry.ItemId,
+                    PlaylistSubItemId = playlistEntry.SubItemId
+                };
+                log.Debug($"{ds.State}");
+                broadcaster.Queue(ds);
+                log.Debug($"{e.Source} playback stopped");
+            }
+            else
+            {
+                log.Debug($"playback stopped during disposal - ignored");
+            }
         }
         private void Mfp_PlaybackStarting(object sender, PlaybackStartingEventArgs e)
         {
@@ -401,6 +432,7 @@ namespace Fastnet.WebPlayer.Tasks
                 PlaylistItemId = playlistEntry.ItemId,
                 PlaylistSubItemId = playlistEntry.SubItemId
             };
+            log.Debug($"{ds.State}");
             broadcaster.Queue(ds);
             log.Debug($"{e.Source} playback started");
         }
@@ -570,6 +602,7 @@ namespace Fastnet.WebPlayer.Tasks
                 {
                     log.Warning($"{this.identifier.DeviceName} inconsistent state, isPlaying = {isPlaying}, isPaused = {isPaused}, ds.State = {ds.State.ToString()}");
                 }
+                //log.Debug($"{ds.State}, volume {p.volume}");
                 broadcaster.Queue(ds);
             }
         }

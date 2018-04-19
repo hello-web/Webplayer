@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Fastnet.Core" Version="1.0.305" />
-    <PackageReference Include="Fastnet.Core.Web" Version="1.0.374" />
+    <PackageReference Include="Fastnet.Core.Web" Version="1.0.403" />
     <PackageReference Include="Fastnet.Music.Core" Version="1.0.130" />
     <PackageReference Include="Microsoft.AspNetCore" Version="2.0.2" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.0.3" />

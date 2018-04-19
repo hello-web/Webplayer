@@ -25,6 +25,7 @@ namespace Fastnet.WebPlayer.Tasks
         private WebPlayerInformation webPlayerInformation;
         private BlockingCollection<MessageBase> messageQueue;
         private int webPlayerBroadcastInterval;
+        private DeviceStatus penUltimateStatus;
         public Broadcaster(IOptions<PlayerConfiguration> playerConfigOptions, IOptions<MusicConfiguration> musicConfigOptions, Messenger messenger, ILoggerFactory loggerFactory) : base(loggerFactory)
         {
             this.messenger = messenger;
@@ -43,6 +44,22 @@ namespace Fastnet.WebPlayer.Tasks
         }
         public void Queue(MessageBase message)
         {
+            if(message is DeviceStatus)
+            {
+                var ds = message as DeviceStatus;
+                if(penUltimateStatus != null)
+                {
+                    if (ds.State != penUltimateStatus.State)
+                    {
+                        log.Debug($"Device id {ds.Identifier.DeviceId}, state changed from {penUltimateStatus.State} to {ds.State}");
+                    }
+                }
+                else
+                {
+                    log.Debug($"Device id {ds.Identifier.DeviceId}, state starts as {ds.State}");
+                }
+                penUltimateStatus = ds;
+            }
             messageQueue.Add(message);
         }
         public override async Task ExecuteAsync(CancellationToken cancellationToken)

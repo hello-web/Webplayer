@@ -69,6 +69,9 @@ namespace Fastnet.WebPlayer.Tasks
                 case PlayerCommands.JumpTo:
                     JumpTo(cmd);
                     break;
+                case PlayerCommands.SetVolume:
+                    SetVolume(cmd);
+                    break;
             }
         }
         public async Task StartAsync()
@@ -89,6 +92,7 @@ namespace Fastnet.WebPlayer.Tasks
         protected abstract void Pause(PlayerCommand cmd);
         protected abstract void Resume(PlayerCommand cmd);
         protected abstract void JumpTo(PlayerCommand cmd);
+        protected abstract void SetVolume(PlayerCommand cmd);
         protected virtual void OnPulse()
         {
             log.Debug($"{identifier.DeviceName}: 1 second pulse");
