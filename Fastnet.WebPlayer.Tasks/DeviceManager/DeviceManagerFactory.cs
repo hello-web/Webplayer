@@ -64,9 +64,9 @@ namespace Fastnet.WebPlayer.Tasks
                         case AudioDeviceType.Wasapi:
                             dm = new WasapiManager(playerConfiguration, musicServerUrl, identifier, broadcaster, loggerFactory);
                             break;
-                            //case AudioDeviceType.Logitech:
-                            //    dm = new LogitechManager(musicServerUrl, identifier, lf.CreateLogger<LogitechManager>());
-                            //    break;
+                        case AudioDeviceType.Logitech:
+                            dm = new LogitechManager(playerConfiguration, musicServerUrl, identifier, broadcaster, loggerFactory);
+                            break;
                     }
                     dm.LocalStore = Path.Combine(env.ContentRootPath, "music.cache");
                     if (!Directory.Exists(dm.LocalStore))

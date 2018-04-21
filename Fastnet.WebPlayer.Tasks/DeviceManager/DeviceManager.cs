@@ -89,10 +89,10 @@ namespace Fastnet.WebPlayer.Tasks
             log.Debug($"{this.GetType().Name} disposed");
         }
         protected abstract Task Play(PlayerCommand cmd);
-        protected abstract void Pause(PlayerCommand cmd);
-        protected abstract void Resume(PlayerCommand cmd);
-        protected abstract void JumpTo(PlayerCommand cmd);
-        protected abstract void SetVolume(PlayerCommand cmd);
+        protected abstract Task Pause(PlayerCommand cmd);
+        protected abstract Task Resume(PlayerCommand cmd);
+        protected abstract Task JumpTo(PlayerCommand cmd);
+        protected abstract Task SetVolume(PlayerCommand cmd);
         protected virtual void OnPulse()
         {
             log.Debug($"{identifier.DeviceName}: 1 second pulse");

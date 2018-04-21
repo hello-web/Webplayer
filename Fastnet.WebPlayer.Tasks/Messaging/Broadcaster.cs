@@ -9,6 +9,7 @@ using NAudio.Wave;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -19,8 +20,9 @@ namespace Fastnet.WebPlayer.Tasks
     public class Broadcaster : RealtimeTask
     {
         private CancellationToken cancellationToken;
+        private readonly ILoggerFactory loggerFactory;
         private readonly Messenger messenger;
-        private readonly PlayerConfiguration playConfig;
+        private readonly PlayerConfiguration playerConfig;
         private readonly MusicConfiguration musicConfig;
         private WebPlayerInformation webPlayerInformation;
         private BlockingCollection<MessageBase> messageQueue;
@@ -28,8 +30,9 @@ namespace Fastnet.WebPlayer.Tasks
         private DeviceStatus penUltimateStatus;
         public Broadcaster(IOptions<PlayerConfiguration> playerConfigOptions, IOptions<MusicConfiguration> musicConfigOptions, Messenger messenger, ILoggerFactory loggerFactory) : base(loggerFactory)
         {
+            this.loggerFactory = loggerFactory;
             this.messenger = messenger;
-            this.playConfig = playerConfigOptions.Value;
+            this.playerConfig = playerConfigOptions.Value;
             this.musicConfig = musicConfigOptions.Value;
             webPlayerBroadcastInterval = musicConfig.WebPlayerBroadcastInterval;
             InitialiseQueue();
@@ -66,7 +69,7 @@ namespace Fastnet.WebPlayer.Tasks
         {
             log.Trace($"{nameof(ExecuteAsync)}");
             this.cancellationToken = cancellationToken;
-            InitialiseWebPlayerInformation();
+            await InitialiseWebPlayerInformationAsync();
             messenger.EnableMulticastSend();
             messenger.DiscardMessage<WebPlayerInformation>();
             messenger.DiscardMessage<DeviceStatus>();
@@ -120,7 +123,7 @@ namespace Fastnet.WebPlayer.Tasks
                     deviceListUpdateCounter++;
                     if ((deviceListUpdateCounter % 3) == 0)
                     {
-                        UpdateDeviceList();
+                        await UpdateDeviceListAsync();
                         deviceListUpdateCounter = 0;
                     }
                 }
@@ -135,10 +138,10 @@ namespace Fastnet.WebPlayer.Tasks
                 log.Debug($"CancellationRequested");
             }
         }
-        private void UpdateDeviceList()
+        private async Task UpdateDeviceListAsync()
         {
             var list = new List<AudioDevice>();
-            foreach(var audioType in playConfig.EnabledAudioTypes)
+            foreach(var audioType in playerConfig.EnabledAudioTypes.Distinct())
             {
                 switch(audioType)
                 {
@@ -149,7 +152,7 @@ namespace Fastnet.WebPlayer.Tasks
                         {
                             //log.Information($"AsioOut: {asio}");
                             list.Add(new AudioDevice { Type = AudioDeviceType.Asio, Name = asio });
-                            if(playConfig.UseDefaultDeviceOnly && list.Count(x => x.Type == AudioDeviceType.Asio) == 1)
+                            if(playerConfig.UseDefaultDeviceOnly && list.Count(x => x.Type == AudioDeviceType.Asio) == 1)
                             {
                                 break;
                             }
@@ -165,7 +168,7 @@ namespace Fastnet.WebPlayer.Tasks
                         {
                             bool msd = dev.Guid == DirectSoundOut.DSDEVID_DefaultPlayback;
                             list.Add(new AudioDevice { Type = AudioDeviceType.DirectSoundOut, Name = dev.Description, IsDefault = msd });
-                            if(playConfig.UseDefaultDeviceOnly && msd)
+                            if(playerConfig.UseDefaultDeviceOnly && msd)
                             {
                                 break;
                             }
@@ -175,7 +178,7 @@ namespace Fastnet.WebPlayer.Tasks
                         var enumerator = new MMDeviceEnumerator();
                         var de = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
                         list.Add(new AudioDevice { Type = AudioDeviceType.Wasapi, Name = de.FriendlyName, IsDefault = true });
-                        if (!playConfig.UseDefaultDeviceOnly)
+                        if (!playerConfig.UseDefaultDeviceOnly)
                         {
                             foreach (var wasapi in enumerator.EnumerateAudioEndPoints(DataFlow.Render, NAudio.CoreAudioApi.DeviceState.Active))
                             {
@@ -187,13 +190,16 @@ namespace Fastnet.WebPlayer.Tasks
                         }
                         break;
                     case AudioDeviceType.Logitech:
-                        log.Warning("Logitech devices not implemented yet");
+                        var lmc = new LMSClient(playerConfig, this.loggerFactory);
+                        var players = await lmc.ServerInformationAsync();
+                        list.AddRange(players.Select(x => new AudioDevice { Type = AudioDeviceType.Logitech, Name = x.Name, MACAddress = x.MACAddress }));
+                        //Debugger.Break();
                         break;
                 }
             }
             webPlayerInformation.AudioDevices = list;
         }
-        private void InitialiseWebPlayerInformation()
+        private async Task InitialiseWebPlayerInformationAsync()
         {
             var list = NetInfo.GetMatchingIPV4Addresses(musicConfig.LocalCIDR);
             if (list.Count() > 1)
@@ -206,7 +212,7 @@ namespace Fastnet.WebPlayer.Tasks
                 MachineName = Environment.MachineName.ToLower(),
                 Url = $"http://{ipAddress.ToString()}:{musicConfig.WebplayerPort}"
             };
-            UpdateDeviceList();
+            await UpdateDeviceListAsync();
         }
     }
 }

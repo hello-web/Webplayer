@@ -13,6 +13,10 @@ namespace Fastnet.WebPlayer.Tasks
     }
     public class PlayerConfiguration
     {
+        /// <summary>
+        /// set this to true if IISExpress is only configured for localhost (no other use case exists)
+        /// </summary>
+        public bool SwapLocalIpAddressToLocalHost { get; set; }
         public bool UseDefaultDeviceOnly { get; set; }
         public AudioDeviceType[] EnabledAudioTypes { get; set; }
         public bool CacheBeforePlaying { get; set; }
@@ -20,6 +24,8 @@ namespace Fastnet.WebPlayer.Tasks
         public int WasapiLatency { get; set; }
         public bool TryAlternatePath { get; set; }
         public IEnumerable<AlternatePath> AlternatePaths { get; set; }
+        public string LogitechServerUrl { get; set; }
+        public bool TraceLMSApi { get; set; }
         public PlayerConfiguration()
         {
             CacheBeforePlaying = true; // temporarily make this the default - remove this feature altogether of url streaming proves to be working via the FilePlayer

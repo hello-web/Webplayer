@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Fastnet.Core.Web" Version="1.0.403" />
+    <PackageReference Include="Fastnet.Core.Web" Version="1.0.406" />
   </ItemGroup>
 
 </Project>

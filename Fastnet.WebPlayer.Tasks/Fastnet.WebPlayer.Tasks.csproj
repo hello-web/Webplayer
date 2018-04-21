@@ -6,9 +6,9 @@
 
   <ItemGroup>
     <PackageReference Include="Fastnet.Core" Version="1.0.305" />
-    <PackageReference Include="Fastnet.Core.Web" Version="1.0.403" />
-    <PackageReference Include="Fastnet.Music.Core" Version="1.0.130" />
-    <PackageReference Include="Fastnet.Music.Messages" Version="1.0.362" />
+    <PackageReference Include="Fastnet.Core.Web" Version="1.0.406" />
+    <PackageReference Include="Fastnet.Music.Core" Version="1.0.157" />
+    <PackageReference Include="Fastnet.Music.Messages" Version="1.0.370" />
     <PackageReference Include="NAudio" Version="1.8.4" />
   </ItemGroup>
 

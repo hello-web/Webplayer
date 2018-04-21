@@ -22,9 +22,11 @@ namespace Fastnet.WebPlayer.Tasks
         private readonly string machineName;
         private readonly DeviceManagerFactory dmf;
         private readonly MusicConfiguration musicConfig;
+        private readonly PlayerConfiguration playerConfiguration;
         private readonly string currentIpAddress;
-        public Receiver(IOptions<MusicConfiguration> musicConfigOptions, DeviceManagerFactory dmf, Messenger messenger, ILoggerFactory loggerFactory) : base(loggerFactory)
+        public Receiver(IOptions<PlayerConfiguration> playerConfigOptions, IOptions<MusicConfiguration> musicConfigOptions, DeviceManagerFactory dmf, Messenger messenger, ILoggerFactory loggerFactory) : base(loggerFactory)
         {
+            this.playerConfiguration = playerConfigOptions.Value;
             this.musicConfig = musicConfigOptions.Value;
             this.dmf = dmf;
             this.messenger = messenger;
@@ -99,15 +101,10 @@ namespace Fastnet.WebPlayer.Tasks
         }
         private (bool, string) CanReachServer(string url)
         {
-            bool result = false;
-            var uri = new Uri(url);
-            if (uri.Port != 5700)
+            if (playerConfiguration.SwapLocalIpAddressToLocalHost)
             {
-                // this means that server url is for a server not deployed in IIS
-                // such servers are running in IISExpress
-                // we can only reach such servers if we are on the same machine as the server and
-                // use a url starting with http://localhost
-                // because I cannot be bothered to set up additional urls for IISExpress to serve
+                bool result = false;
+                var uri = new Uri(url);
                 if (currentIpAddress == uri.Host)
                 {
                     // we are on the ip address as the music server
@@ -115,12 +112,13 @@ namespace Fastnet.WebPlayer.Tasks
                     //log.Warning($"music server url changed to {url}");
                     result = true;
                 }
+                else
+                {
+                    result = true;
+                }
+                return (result, url);
             }
-            else
-            {
-                result = true;
-            }
-            return (result, url);
+            return (true, url);
         }
     }
 }

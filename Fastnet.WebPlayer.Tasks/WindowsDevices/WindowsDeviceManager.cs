@@ -320,7 +320,7 @@ namespace Fastnet.WebPlayer.Tasks
             }
             else
             {
-                log.LogInformation($"using device {mmDevice.FriendlyName}, {mmDevice.DeviceFriendlyName}");
+                log.Information($"using device {mmDevice.FriendlyName}, {mmDevice.DeviceFriendlyName}");
             }
         }
         public override void ReplacePlayConfiguration(PlayerConfiguration pc)
@@ -346,15 +346,17 @@ namespace Fastnet.WebPlayer.Tasks
             // Important! base.Stop() must be called so that this instance is disposed
             base.Stop();
         }
-        protected override void Pause(PlayerCommand cmd)
+        protected override Task Pause(PlayerCommand cmd)
         {
             mfp?.Pause();
             isPaused = true;
+            return Task.CompletedTask;
         }
-        protected override void Resume(PlayerCommand cmd)
+        protected override Task Resume(PlayerCommand cmd)
         {
             mfp?.Resume();
             isPaused = false;
+            return Task.CompletedTask;
         }
         protected override Task Play(PlayerCommand cmd)
         {
@@ -379,16 +381,18 @@ namespace Fastnet.WebPlayer.Tasks
             }
             return Task.CompletedTask;
         }
-        protected override void JumpTo(PlayerCommand cmd)
+        protected override Task JumpTo(PlayerCommand cmd)
         {
             mfp?.JumpTo(cmd);
+            return Task.CompletedTask;
         }
-        protected override void SetVolume(PlayerCommand cmd)
+        protected override Task SetVolume(PlayerCommand cmd)
         {
             //var range = mmDevice.AudioEndpointVolume.VolumeRange;
             //var decibels = (range.MaxDecibels - range.MinDecibels) * (cmd.Volume / 100.0f) + range.MinDecibels;
 
             mmDevice.AudioEndpointVolume.MasterVolumeLevelScalar = cmd.Volume / 100.0f;
+            return Task.CompletedTask;
         }
         private void Mfp_PlaybackStopped(object sender, PlaybackEventArgs e)
         {
@@ -581,9 +585,6 @@ namespace Fastnet.WebPlayer.Tasks
                     case NAudio.Wave.PlaybackState.Playing:
                         ds.State = Music.Core.DeviceState.Playing;
                         break;
-
-                        ////ds.State = Music.Core.DeviceState.Stopped;
-                        //break;
                 }
                 switch (ds.State)
                 {
