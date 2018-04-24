@@ -2,6 +2,7 @@
 using Fastnet.Core.Web;
 using Fastnet.Music.Core;
 using Fastnet.Music.Messages;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NAudio.CoreAudioApi;
@@ -24,12 +25,15 @@ namespace Fastnet.WebPlayer.Tasks
         private readonly Messenger messenger;
         private readonly PlayerConfiguration playerConfig;
         private readonly MusicConfiguration musicConfig;
+        private readonly IHostingEnvironment hostingEnvironment;
         private WebPlayerInformation webPlayerInformation;
         private BlockingCollection<MessageBase> messageQueue;
         private int webPlayerBroadcastInterval;
         private DeviceStatus penUltimateStatus;
-        public Broadcaster(IOptions<PlayerConfiguration> playerConfigOptions, IOptions<MusicConfiguration> musicConfigOptions, Messenger messenger, ILoggerFactory loggerFactory) : base(loggerFactory)
+        public Broadcaster(IHostingEnvironment env, IOptions<PlayerConfiguration> playerConfigOptions, IOptions<MusicConfiguration> musicConfigOptions,
+            Messenger messenger, ILoggerFactory loggerFactory) : base(loggerFactory)
         {
+            hostingEnvironment = env;
             this.loggerFactory = loggerFactory;
             this.messenger = messenger;
             this.playerConfig = playerConfigOptions.Value;
@@ -45,8 +49,9 @@ namespace Fastnet.WebPlayer.Tasks
         {
             webPlayerBroadcastInterval = musicConfig.WebPlayerBroadcastInterval;
         }
-        public void Queue(MessageBase message)
+        public void Queue(MusicMessage message)
         {
+            message.IsDevelopment = hostingEnvironment.IsDevelopment();
             if(message is DeviceStatus)
             {
                 var ds = message as DeviceStatus;
@@ -209,6 +214,7 @@ namespace Fastnet.WebPlayer.Tasks
             var ipAddress = list.First();
             webPlayerInformation = new WebPlayerInformation
             {
+                IsDevelopment = hostingEnvironment.IsDevelopment(),
                 MachineName = Environment.MachineName.ToLower(),
                 Url = $"http://{ipAddress.ToString()}:{musicConfig.WebplayerPort}"
             };

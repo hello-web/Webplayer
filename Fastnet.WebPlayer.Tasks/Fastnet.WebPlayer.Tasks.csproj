@@ -5,10 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Fastnet.Core" Version="1.0.305" />
-    <PackageReference Include="Fastnet.Core.Web" Version="1.0.406" />
-    <PackageReference Include="Fastnet.Music.Core" Version="1.0.157" />
-    <PackageReference Include="Fastnet.Music.Messages" Version="1.0.370" />
+    <PackageReference Include="Fastnet.Core" Version="1.0.313" />
+    <PackageReference Include="Fastnet.Core.Web" Version="1.0.409" />
+    <PackageReference Include="Fastnet.Music.Core" Version="1.0.160" />
+    <PackageReference Include="Fastnet.Music.Messages" Version="1.0.382" />
     <PackageReference Include="NAudio" Version="1.8.4" />
   </ItemGroup>
 

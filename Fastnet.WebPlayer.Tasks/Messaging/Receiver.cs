@@ -2,6 +2,7 @@
 using Fastnet.Core.Web;
 using Fastnet.Music.Core;
 using Fastnet.Music.Messages;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
@@ -24,8 +25,11 @@ namespace Fastnet.WebPlayer.Tasks
         private readonly MusicConfiguration musicConfig;
         private readonly PlayerConfiguration playerConfiguration;
         private readonly string currentIpAddress;
-        public Receiver(IOptions<PlayerConfiguration> playerConfigOptions, IOptions<MusicConfiguration> musicConfigOptions, DeviceManagerFactory dmf, Messenger messenger, ILoggerFactory loggerFactory) : base(loggerFactory)
+        private readonly IHostingEnvironment hostingEnvironment;
+        public Receiver(IHostingEnvironment env, IOptions<PlayerConfiguration> playerConfigOptions, IOptions<MusicConfiguration> musicConfigOptions,
+            DeviceManagerFactory dmf, Messenger messenger, ILoggerFactory loggerFactory) : base(loggerFactory)
         {
+            hostingEnvironment = env;
             this.playerConfiguration = playerConfigOptions.Value;
             this.musicConfig = musicConfigOptions.Value;
             this.dmf = dmf;
@@ -40,8 +44,20 @@ namespace Fastnet.WebPlayer.Tasks
         {
             log.Trace($"{nameof(ExecuteAsync)}");
             this.cancellationToken = cancellationToken;
-            messenger.AddMulticastSubscription<AllPointsBulletin>((m) => APBHandler(m as AllPointsBulletin));
-            messenger.AddMulticastSubscription<PlayerCommand>(async (m) => await PlayerCommandHandler(m as PlayerCommand));
+            messenger.AddMulticastSubscription<AllPointsBulletin>((m) =>
+            {
+                if (hostingEnvironment.IsDevelopment() && m.IsDevelopment || !hostingEnvironment.IsDevelopment() && !m.IsDevelopment)
+                {
+                    APBHandler(m);
+                }
+            });
+            messenger.AddMulticastSubscription<PlayerCommand>(async (m) =>
+            {
+                if (hostingEnvironment.IsDevelopment() && m.IsDevelopment || !hostingEnvironment.IsDevelopment() && !m.IsDevelopment)
+                {
+                    await PlayerCommandHandler(m);
+                }
+            });
             while (!this.cancellationToken.IsCancellationRequested)
             {
                 try
