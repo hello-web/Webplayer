@@ -104,7 +104,7 @@ namespace Fastnet.WebPlayer.Tasks
                 {
                     players.Add(new LogitechPlayer
                     {
-                        UUID = Guid.Parse(item.uuid).ToString(),
+                        //UUID = Guid.Parse(item.uuid).ToString(),
                         MACAddress = item.playerid,
                         Name = item.name,
                         IsPlayer = item.isplayer == 1,
