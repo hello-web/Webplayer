@@ -197,7 +197,13 @@ namespace Fastnet.WebPlayer.Tasks
                     case AudioDeviceType.Logitech:
                         var lmc = new LMSClient(playerConfig, this.loggerFactory);
                         var players = await lmc.ServerInformationAsync();
-                        list.AddRange(players.Select(x => new AudioDevice { Type = AudioDeviceType.Logitech, Name = x.Name, MACAddress = x.MACAddress }));
+                        list.AddRange(players.Select(x => new AudioDevice
+                        {
+                            Type = AudioDeviceType.Logitech,
+                            Name = x.Name,
+                            MACAddress = x.MACAddress,
+                            Capability = new AudioCapability { MaxSampleRate = x.ModelName == "Squeezebox Classic" ? 44100 : 0}
+                        }));
                         //Debugger.Break();
                         break;
                 }

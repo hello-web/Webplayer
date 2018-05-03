@@ -35,7 +35,7 @@ namespace Fastnet.Webplayer
             services.AddOptions();
             services.Configure<MusicConfiguration>(Configuration.GetSection("MusicConfiguration"));
             services.Configure<PlayerConfiguration>(Configuration.GetSection("PlayerConfiguration"));
-            services.AddWebDbContext<PlayerDb, PlayerDbContextFactory, PlayerDbOptions>(Configuration, "PlayerDbOptions");
+            //services.AddWebDbContext<PlayerDb, PlayerDbContextFactory, PlayerDbOptions>(Configuration, "PlayerDbOptions");
             services.AddScheduler(Configuration);
             services.AddSingleton<Messenger>();
 
@@ -76,18 +76,18 @@ namespace Fastnet.Webplayer
                     name: "spa-fallback",
                     defaults: new { controller = "Home", action = "Index" });
             });
-            using (var scope = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>().CreateScope())
-            {
-                try
-                {
-                    var db = scope.ServiceProvider.GetService<PlayerDb>();
-                    PlayerDbInitialiser.Initialise(db);
-                }
-                catch (System.Exception xe)
-                {
-                    log.Error(xe, $"Error initialising PlayerDb");
-                }
-            }
+            //using (var scope = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>().CreateScope())
+            //{
+            //    try
+            //    {
+            //        var db = scope.ServiceProvider.GetService<PlayerDb>();
+            //        PlayerDbInitialiser.Initialise(db);
+            //    }
+            //    catch (System.Exception xe)
+            //    {
+            //        log.Error(xe, $"Error initialising PlayerDb");
+            //    }
+            //}
         }
     }
 }

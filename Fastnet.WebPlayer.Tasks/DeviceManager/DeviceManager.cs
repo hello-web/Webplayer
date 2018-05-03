@@ -13,8 +13,10 @@ namespace Fastnet.WebPlayer.Tasks
         protected (long ItemId, long SubItemId) playlistEntry;
         protected bool isPlaying; // this is the palying or stopped state
         protected bool isPaused; // this is the play/paused toggle
+
         internal string LocalStore { get; set; }
         private readonly ILogger log;
+        private long currentlyPlayingMusicFileId;
         protected DeviceIdentifier identifier;
         public CancellationTokenSource CancellationSource { get; private set; }
         protected readonly string musicServerUrl;
@@ -47,6 +49,7 @@ namespace Fastnet.WebPlayer.Tasks
             {
                 case PlayerCommands.Play:
                     playlistEntry = (cmd.PlaylistItemId, cmd.PlaylistSubItemId);
+                    currentlyPlayingMusicFileId = cmd.MusicFileId;
                     Play(cmd);
                     break;
                 case PlayerCommands.TogglePlayPause:
@@ -93,10 +96,11 @@ namespace Fastnet.WebPlayer.Tasks
         protected abstract Task Resume(PlayerCommand cmd);
         protected abstract Task JumpTo(PlayerCommand cmd);
         protected abstract Task SetVolume(PlayerCommand cmd);
-        protected virtual void OnPulse()
-        {
-            log.Debug($"{identifier.DeviceName}: 1 second pulse");
-        }
+        protected abstract void OnPulse(DeviceStatus ds);
+        //protected virtual void OnPulse()
+        //{
+        //    log.Debug($"{identifier.DeviceName}: 1 second pulse");
+        //}
         private async Task Run()
         {
             while(!CancellationSource.Token.IsCancellationRequested)
@@ -104,7 +108,12 @@ namespace Fastnet.WebPlayer.Tasks
                 try
                 {
                     await Task.Delay(1000);
-                    OnPulse();
+                    var ds = new DeviceStatus
+                    {
+                        Identifier = this.identifier,
+                        MusicFileId = currentlyPlayingMusicFileId                                                   
+                    };
+                    OnPulse(ds);
                 }
                 catch (AggregateException)
                 {

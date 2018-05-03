@@ -566,16 +566,16 @@ namespace Fastnet.WebPlayer.Tasks
         //    }
         //}
         protected abstract IWavePlayer GetDevice(MMDevice device);
-        protected override void OnPulse()
+        protected override void OnPulse(DeviceStatus ds)
         {
             if (isPlaying)
             {
                 var p = mfp.GetProgress();
-                var ds = new DeviceStatus
-                {
-                    Identifier = this.identifier//,
-                    //State = p.playbackState
-                };
+                //var ds = new DeviceStatus
+                //{
+                //    Identifier = this.identifier//,
+                //    //State = p.playbackState
+                //};
                 switch(p.playbackState)
                 {
                     case NAudio.Wave.PlaybackState.Paused:

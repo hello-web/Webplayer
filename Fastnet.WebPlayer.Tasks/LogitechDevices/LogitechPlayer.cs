@@ -14,6 +14,7 @@ namespace Fastnet.WebPlayer.Tasks
         public bool IsConnected { get; set; }
         public bool IsPowerOn { get; set; }
         //public string UUID { get; set; }
+        public string ModelName { get; set; }
     }
     public class LogitechPlayerStatus : LogitechPlayer
     {

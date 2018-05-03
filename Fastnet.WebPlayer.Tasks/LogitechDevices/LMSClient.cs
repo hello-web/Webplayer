@@ -50,6 +50,7 @@ namespace Fastnet.WebPlayer.Tasks
                 public int isplaying { get; set; }
                 public int canpoweroff { get; set; }
                 public int power { get; set; }
+                public string modelname { get; set; }
             }
             public List<object> @params { get; set; }
             public string method { get; set; }
@@ -110,7 +111,8 @@ namespace Fastnet.WebPlayer.Tasks
                         IsPlayer = item.isplayer == 1,
                         IsPlaying = item.isplaying == 1,
                         IsConnected = item.connected == 1,
-                        IsPowerOn = item.power == 1
+                        IsPowerOn = item.power == 1,
+                        ModelName = item.modelname
                     });
                 }
             }

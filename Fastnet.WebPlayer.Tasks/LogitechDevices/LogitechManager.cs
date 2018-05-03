@@ -72,14 +72,14 @@ namespace Fastnet.WebPlayer.Tasks
         {
             await lmc.SetVolume(macAddress, cmd.Volume);
         }
-        protected override async void OnPulse()
+        protected override async void OnPulse(DeviceStatus ds)
         {
             var lps = await lmc.PlayerInformation(macAddress);
             log.Trace($"logitech player info: {lps.ToJson()}");
-            var ds = new DeviceStatus
-            {
-                Identifier = this.identifier//,
-            };
+            //var ds = new DeviceStatus
+            //{
+            //    Identifier = this.identifier//,
+            //};
             switch (lps.Mode)
             {
                 case "play":
