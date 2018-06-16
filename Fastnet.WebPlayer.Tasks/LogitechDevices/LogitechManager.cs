@@ -22,7 +22,18 @@ namespace Fastnet.WebPlayer.Tasks
         }
         public override async void Stop()
         {
+            log.Debug("Stop() called");
             await lmc.Stop(macAddress);
+            isPlaying = false;
+            isPaused = false;
+            var ds = new DeviceStatus
+            {
+                Identifier = this.identifier,
+                State = Music.Core.DeviceState.Idle,
+                PlaybackEvent = PlaybackEvent.None
+            };
+            log.Debug($"{ds.State}");
+            broadcaster.Queue(ds);
             base.Stop();
         }
         protected override async Task JumpTo(PlayerCommand cmd)
@@ -30,8 +41,11 @@ namespace Fastnet.WebPlayer.Tasks
             if (isPlaying)
             {
                 var lps = await lmc.PlayerInformation(macAddress);
-                var required = lps.Duration * (cmd.Position / 100.0);
-                await lmc.JumpTo(macAddress, required);
+                if (lps != null)
+                {
+                    var required = lps.Duration * (cmd.Position / 100.0);
+                    await lmc.JumpTo(macAddress, required);
+                }
             }
         }
 
@@ -75,50 +89,50 @@ namespace Fastnet.WebPlayer.Tasks
         protected override async void OnPulse(DeviceStatus ds)
         {
             var lps = await lmc.PlayerInformation(macAddress);
-            log.Trace($"logitech player info: {lps.ToJson()}");
-            //var ds = new DeviceStatus
-            //{
-            //    Identifier = this.identifier//,
-            //};
-            switch (lps.Mode)
+            if (lps != null)
             {
-                case "play":
-                    ds.State = DeviceState.Playing;
-                    ds.Volume = lps.Volume;
-                    ds.TotalTime = TimeSpan.FromSeconds(lps.Duration);
-                    ds.CurrentTime = TimeSpan.FromSeconds(lps.Position);
-                    ds.PlaylistItemId = playlistEntry.ItemId;
-                    ds.PlaylistSubItemId = playlistEntry.SubItemId;
-                    broadcaster.Queue(ds);
-                    break;
-                case "pause":
-                    ds.State = DeviceState.Paused;
-                    ds.Volume = lps.Volume;
-                    ds.TotalTime = TimeSpan.FromSeconds(lps.Duration);
-                    ds.CurrentTime = TimeSpan.FromSeconds(lps.Position);
-                    ds.PlaylistItemId = playlistEntry.ItemId;
-                    ds.PlaylistSubItemId = playlistEntry.SubItemId;
-                    broadcaster.Queue(ds);
-                    break;
-                case "stop":
-                    if (isPlaying)
-                    {
-                        isPlaying = false;
-                        isPaused = false;
-                        ds = new DeviceStatus
-                        {
-                            Identifier = this.identifier,
-                            State = Music.Core.DeviceState.Playing,
-                            PlaybackEvent = PlaybackEvent.PlayStopped,
-                            Volume = lps.Volume,
-                            TotalTime = TimeSpan.FromSeconds(lps.Duration),
-                            CurrentTime = TimeSpan.FromSeconds(lps.Position),
-                            PlaylistItemId = playlistEntry.ItemId,
-                            PlaylistSubItemId = playlistEntry.SubItemId
-                        };
+                log.Debug($"logitech player info: {lps.ToJson()}");
+                switch (lps.Mode)
+                {
+                    case "play":
+                        ds.State = DeviceState.Playing;
+                        ds.Volume = lps.Volume;
+                        ds.TotalTime = TimeSpan.FromSeconds(lps.Duration);
+                        ds.CurrentTime = TimeSpan.FromSeconds(lps.Position);
+                        ds.PlaylistItemId = playlistEntry.ItemId;
+                        ds.PlaylistSubItemId = playlistEntry.SubItemId;
                         broadcaster.Queue(ds);
-                    }
-                    break;
+                        break;
+                    case "pause":
+                        ds.State = DeviceState.Paused;
+                        ds.Volume = lps.Volume;
+                        ds.TotalTime = TimeSpan.FromSeconds(lps.Duration);
+                        ds.CurrentTime = TimeSpan.FromSeconds(lps.Position);
+                        ds.PlaylistItemId = playlistEntry.ItemId;
+                        ds.PlaylistSubItemId = playlistEntry.SubItemId;
+                        broadcaster.Queue(ds);
+                        break;
+                    case "stop":
+                        if (isPlaying)
+                        {
+                            isPlaying = false;
+                            isPaused = false;
+                            ds = new DeviceStatus
+                            {
+                                Identifier = this.identifier,
+                                State = Music.Core.DeviceState.Playing,
+                                PlaybackEvent = PlaybackEvent.PlayStopped,
+                                Volume = lps.Volume,
+                                TotalTime = TimeSpan.FromSeconds(lps.Duration),
+                                CurrentTime = TimeSpan.FromSeconds(lps.Position),
+                                PlaylistItemId = playlistEntry.ItemId,
+                                PlaylistSubItemId = playlistEntry.SubItemId
+                            };
+                            broadcaster.Queue(ds);
+                        }
+                        //Stop();
+                        break;
+                }
             }
 
         }

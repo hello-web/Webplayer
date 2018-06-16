@@ -96,25 +96,33 @@ namespace Fastnet.WebPlayer.Tasks
         public async Task<List<LogitechPlayer>> ServerInformationAsync()
         {
             string json = @"{""id"":1,""method"":""slim.request"",""params"":["""",[""serverstatus"",0,999]]}";
-            //JObject jo = JObject.Parse(json);
-            LogitechMediaServerStatus root = await PostJsonAsync<LogitechMediaServerStatus>(json);// await this.PostJsonAsync<JObject, LogitechMediaServerStatus>(GetJsonRpc(), jo);
             List<LogitechPlayer> players = new List<LogitechPlayer>();
-            if (root.Info.PlayerList != null)
+            try
             {
-                foreach (var item in root.Info.PlayerList)
+                LogitechMediaServerStatus root = await PostJsonAsync<LogitechMediaServerStatus>(json);// await this.PostJsonAsync<JObject, LogitechMediaServerStatus>(GetJsonRpc(), jo);
+                if (root?.Info.PlayerList != null)
                 {
-                    players.Add(new LogitechPlayer
+                    foreach (var item in root.Info.PlayerList)
                     {
-                        //UUID = Guid.Parse(item.uuid).ToString(),
-                        MACAddress = item.playerid,
-                        Name = item.name,
-                        IsPlayer = item.isplayer == 1,
-                        IsPlaying = item.isplaying == 1,
-                        IsConnected = item.connected == 1,
-                        IsPowerOn = item.power == 1,
-                        ModelName = item.modelname
-                    });
+                        var rd = item.ToJson();
+                        log.Trace($"item: {rd}");
+                        players.Add(new LogitechPlayer
+                        {
+                            //UUID = Guid.Parse(item.uuid).ToString(),
+                            MACAddress = item.playerid,
+                            Name = item.name,
+                            IsPlayer = item.isplayer == 1,
+                            IsPlaying = item.isplaying == 1,
+                            IsConnected = item.connected == 1,
+                            IsPowerOn = item.power == 1,
+                            ModelName = item.modelname
+                        });
+                    }
                 }
+            }
+            catch (Exception xe)
+            {
+                log.Error(xe);
             }
             return players;// root;
         }
@@ -132,40 +140,42 @@ namespace Fastnet.WebPlayer.Tasks
                 //var response = await PostJsonStringAsync(json);
                 //var root = await PostJsonAsync<PlayerStatusRootObject>(json);
                 JObject droot = await PostJsonAsync<dynamic>(json);
-
-                var result = droot["result"];
-                LogitechPlayerStatus status = null;
-                try
+                if (droot != null)
                 {
-
-                    status = new LogitechPlayerStatus
+                    var result = droot["result"];
+                    LogitechPlayerStatus status = null;
+                    try
                     {
-                        //UUID = device.DeviceId,
-                        Mode = result.Value<string>("mode"),
-                        Name = result.Value<string>("player_name"),
-                        Duration = result.Value<double>("duration"),
-                        Position = result.Value<double>("time"),
-                        Volume = result.Value<int>("mixer volume"),
-                    };
-                    //if (result["playlist_loop"] != null)
-                    //{
-                    //    JArray loop = (JArray)result["playlist_loop"];
-                    //    status.File = new Uri(loop[0].Value<string>("url")).LocalPath;
-                    //    status.Title = loop[0].Value<string>("title");
-                    //}
-                    //if(root.Result.PlaylistItem != null)
-                    //{
-                    //    //status.PlaylistLength = root.Result.PlaylistItem.Count;
-                    //    //status.Title = root.Result.PlaylistItem?.Title;
-                    //    //status.File = new Uri(root.Result.PlaylistItem?.Url).ToString();
-                    //}
+
+                        status = new LogitechPlayerStatus
+                        {
+                            //UUID = device.DeviceId,
+                            Mode = result.Value<string>("mode"),
+                            Name = result.Value<string>("player_name"),
+                            Duration = result.Value<double>("duration"),
+                            Position = result.Value<double>("time"),
+                            Volume = result.Value<int>("mixer volume"),
+                        };
+                        //if (result["playlist_loop"] != null)
+                        //{
+                        //    JArray loop = (JArray)result["playlist_loop"];
+                        //    status.File = new Uri(loop[0].Value<string>("url")).LocalPath;
+                        //    status.Title = loop[0].Value<string>("title");
+                        //}
+                        //if(root.Result.PlaylistItem != null)
+                        //{
+                        //    //status.PlaylistLength = root.Result.PlaylistItem.Count;
+                        //    //status.Title = root.Result.PlaylistItem?.Title;
+                        //    //status.File = new Uri(root.Result.PlaylistItem?.Url).ToString();
+                        //}
+                    }
+                    catch (Exception)
+                    {
+                        Debugger.Break();
+                        //throw;
+                    }
+                    return status;// root;
                 }
-                catch (Exception)
-                {
-                    Debugger.Break();
-                    //throw;
-                }
-                return status;// root;
             }
             catch (Exception xe)
             {

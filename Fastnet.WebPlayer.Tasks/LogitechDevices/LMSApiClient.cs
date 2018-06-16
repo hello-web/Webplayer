@@ -19,7 +19,7 @@ namespace Fastnet.WebPlayer.Tasks
             var r = await this.PostJsonAsync<JObject, T>(GetJsonRpc(), jo);
             if(playConfig.TraceLMSApi)
             {
-                log.Trace($"{json} send to {this.BaseAddress}");
+                log.Trace($"{json} send to {this.BaseAddress}, received {r.ToJson()}");
             }
             return r;
         }

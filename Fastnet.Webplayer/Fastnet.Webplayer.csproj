@@ -8,9 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Fastnet.Core" Version="1.0.320" />
-    <PackageReference Include="Fastnet.Core.Web" Version="1.0.412" />
-    <PackageReference Include="Fastnet.Music.Core" Version="1.0.160" />
+    <PackageReference Include="Fastnet.Core" Version="1.0.361" />
+    <PackageReference Include="Fastnet.Core.Web" Version="1.0.440" />
+    <PackageReference Include="Fastnet.Music.Core" Version="1.0.260" />
     <PackageReference Include="Microsoft.AspNetCore" Version="2.0.2" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.0.3" />
     <PackageReference Include="Microsoft.AspNetCore.SpaServices" Version="2.0.3" />

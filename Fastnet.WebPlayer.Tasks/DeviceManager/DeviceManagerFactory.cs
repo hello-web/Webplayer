@@ -15,6 +15,9 @@ namespace Fastnet.WebPlayer.Tasks
 {
     public class DeviceManagerFactory
     {
+        /// <summary>
+        /// There is a separate instance of a concrete DeviceManager per device
+        /// </summary>
         private readonly Dictionary<DeviceIdentifier, DeviceManager> managers;
         private readonly ILoggerFactory loggerFactory;
         private readonly ILogger log;
